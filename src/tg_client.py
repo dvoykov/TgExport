@@ -127,7 +127,13 @@ class TgClient:
         )
 
         for msg in raw_messages:
-            if msg and msg.id and msg.text and msg.date:
+            if (
+                msg
+                and msg.id
+                and msg.text
+                and msg.date
+                and isinstance(msg.from_id, PeerUser)
+            ):
                 users_set.add(msg.from_id.user_id)
 
                 reply_to_msg_id = (
@@ -138,16 +144,17 @@ class TgClient:
 
                 if msg.reactions and msg.reactions.recent_reactions:
                     for reaction in msg.reactions.recent_reactions:
-                        users_set.add(reaction.peer_id.user_id)
+                        if hasattr(reaction.reaction, "emoticon"):
+                            users_set.add(reaction.peer_id.user_id)
 
-                        mr = MsgReaction(
-                            chat_id=chat_id,
-                            msg_id=msg.id,
-                            user_id=reaction.peer_id.user_id,
-                            dt=reaction.date.astimezone(tz.tzlocal()),
-                            emoticon=reaction.reaction.emoticon,
-                        )
-                        reactions.append(mr)
+                            mr = MsgReaction(
+                                chat_id=chat_id,
+                                msg_id=msg.id,
+                                user_id=reaction.peer_id.user_id,
+                                dt=reaction.date.astimezone(tz.tzlocal()),
+                                emoticon=reaction.reaction.emoticon,
+                            )
+                            reactions.append(mr)
 
                 message = Msg(
                     chat_id,
